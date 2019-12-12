@@ -38,6 +38,53 @@ DataQualityReport$NoOfRecords<-nrow(Telecom)
 # maximum, minimum and mean for each variable  
 
 for(i in 1:ncol(Telecom)){
-
+ DataQualityReport$UniqueRecords[i]<-length(unique(Telecom[,i]))
+  DataQualityReport$DataAvailable[i]<-sum(!is.na(Telecom[,i]))
+  DataQualityReport$AvailablePercent[i]<- round(100*(DataQualityReport$DataAvailable[i]/DataQualityReport$NoOfRecords[i]),2)
+  DataQualityReport$Missing[i]<- sum(is.na(Telecom[,i]))
+  DataQualityReport$MissingPercent[i]<- round(100*(DataQualityReport$Missing[i]/DataQualityReport$NoOfRecords[i]),2)
+  
+  if(DataQualityReport$DataType[i]== "numeric" ||  DataQualityReport$DataType[i] =="integer"){
+    DataQualityReport$Minimum[i] <- min(Telecom[,i],na.rm = TRUE)
+    DataQualityReport$Maximum[i] <- max(Telecom[,i],na.rm = TRUE)
+    DataQualityReport$Mean[i]  <- mean(Telecom[,i],na.rm = TRUE)
+    
+  }
+  else{
+    DataQualityReport$Minimum[i] <- 0
+    DataQualityReport$Maximum[i] <- 0
+    DataQualityReport$Mean[i] <-0
+  }
 }
    
+#Creating an empty quant data frame with column names given
+
+quant<-data.frame(matrix(ncol = 8,nrow = 0))
+colnames(quant)<-c("5thPercentile","10thPercentile","25thPercentile","50thPercentile",
+                   "75thPercentile","90thPercentile","95thPercentile","99thPercentile")
+
+# Calculating quantile for each variable then transforming it assigning to quant data frame
+for(i in 1:length(Telecom)){
+  if(DataQualityReport$DataType[i]== "numeric" ||  DataQualityReport$DataType[i] =="integer"){
+    quant[i,] <- t(apply(Telecom[i],2,quantile,
+                         probs=c(0.05,0.10,0.25,0.50,0.75,0.90,0.95,0.99),
+                         na.rm = TRUE))
+  }
+  else{
+    quant[i,]<-0
+  }
+}
+
+class(quant)
+
+#combining the DataQualityReport and quant dataframne column wise to get final result
+
+DataQualityReport<- cbind(DataQualityReport, quant)
+
+#Removing TEmporary variable created during data quality report
+rm(quant)
+rm(i)
+
+class(DataQualityReport)
+ 
+
